@@ -1,12 +1,46 @@
-# metrics.py
-import requests, pandas as pd, matplotlib.pyplot as plt, io, os, datetime as dt
+import os, sys, requests, pandas as pd, matplotlib.pyplot as plt
+ZONE = os.getenv("MAKE_ZONE", "eu2")                # tu zona
+BASE = f"https://{ZONE}.make.com/api/v2"            # ← añade /api/
 
-TOKEN = os.environ["MAKE_TOKEN"]
-SCENARIO_ID = "123456"
 
+ZONE        = os.getenv("MAKE_ZONE", "eu2")
+TEAM_ID     = os.getenv("MAKE_TEAM_ID", "1557908")
+SCENARIO_ID = os.getenv("SCENARIO_ID", "5164268")
+TOKEN       = "2be818c3-dff7-44f5-bb52-3a2a57574085"
+BASE = f"https://{ZONE}.make.com/api/v2"
+
+
+PAGE = 50                   # máximo aceptado por la API
+offset = 0
+all_logs = []
 headers = {"Authorization": f"Token {TOKEN}"}
-url = f"https://api.make.com/v2/scenarios/{SCENARIO_ID}/executions?limit=1000"
-data = requests.get(url, headers=headers).json()["data"]
+
+while True:
+    url = (
+        f"{BASE}/scenarios/{SCENARIO_ID}/logs"
+        f"?teamId={TEAM_ID}&pg[limit]={PAGE}&pg[offset]={offset}"
+    )
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+
+    page_logs = resp.json()["scenarioLogs"]
+    if not page_logs:
+        break
+
+    all_logs.extend(page_logs)
+    offset += PAGE          # siguiente página
+
+if not TOKEN or not SCENARIO_ID:
+    sys.exit("Faltan MAKE_TOKEN o SCENARIO_ID")
+
+
+
+
+
+resp = requests.get(url, headers=headers)
+resp.raise_for_status()                       # lanza error si no es 2xx
+
+logs = resp.json()["scenarioLogs"]   
 
 df = pd.DataFrame([{
         "start": x["startedAt"],
